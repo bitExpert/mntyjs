@@ -142,7 +142,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
         determineElementPlugins: function (element) {
             var me = this,
                 mountPoint = me.getMountPoint(),
-                plugins = $(element).attr(mountPoint).val();
+                plugins = $(element).attr(mountPoint);
 
             if (plugins) {
                 plugins = plugins.split(',');
