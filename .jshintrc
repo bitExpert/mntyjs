@@ -1,0 +1,7 @@
+{
+    "extends": "node_modules/bitexpert-cs-jshint/config/generic.json",
+    "globals": {
+        "require": true,
+        "define": true
+    }
+}

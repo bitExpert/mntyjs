@@ -1,0 +1,9 @@
+{
+  "name" : "mntyjs",
+  "version": "1.0.0",
+  "dependencies" : {
+      "jquery" : "latest",
+      "log4javascript" : "https://github.com/avuori/log4javascript-amd.git",
+      "requirejs": "latest"
+  }
+}

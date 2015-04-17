@@ -1,0 +1,33 @@
+{
+    "name": "mntyjs",
+    "version": "1.0.0",
+    "description": "A lightweight pluginsystem for websites",
+    "main": "Gruntfile.js",
+    "directories": {
+        "doc": "doc"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "JavaScript",
+        "Plugins"
+    ],
+    "author": "Peter Hildenbrand",
+    "license": "proprietary",
+    "devDependencies": {
+        "bitexpert-cs-jscs": "^0.1.0",
+        "bitexpert-cs-jshint": "^0.1.0",
+        "grunt": "0.4.x",
+        "grunt-cli": "0.1.x",
+        "grunt-jsdoc": "^0.6.1",
+        "grunt-contrib-requirejs": "^0.4.4",
+        "grunt-contrib-watch": "^0.6.1",
+        "grunt-jscs": "0.7.x",
+        "grunt-jsdoc": "^0.6.1",
+        "grunt-newer": "^0.7.0",
+        "grunt-notify": "^0.3.1",
+        "jshint-jenkins-checkstyle-reporter": "0.1.x",
+        "load-grunt-tasks": "^0.6.0"
+    }
+}
