@@ -1,4 +1,6 @@
 /**
+ * mntyjs 1.0.0
+ *
  * @preserve Copyright 2015 bitExpert AG
  */
 require(['PluginManager', 'OptionParser', 'jquery'], function (PluginManager, OptionParser, $) {

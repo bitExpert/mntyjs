@@ -1,3 +1,4 @@
+![mntyjs Logo](./logo.png)
 # mntyjs
 
 mntyjs is a lightweight plugin system based on require.js, jQuery and Base.js
@@ -14,4 +15,4 @@ as the document is ready. Also it registers to the window unload event and will 
 instances.
 
 
-More docs will come soon...
+More docs soon...

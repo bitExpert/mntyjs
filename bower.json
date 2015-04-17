@@ -1,9 +1,33 @@
 {
-  "name" : "mntyjs",
-  "version": "1.0.0",
-  "dependencies" : {
-      "jquery" : "latest",
-      "log4javascript" : "https://github.com/avuori/log4javascript-amd.git",
-      "requirejs": "latest"
-  }
+    "name": "mntyjs",
+    "version": "1.0.0",
+    "licence": "Apache-2.0",
+    "moduleType": "amd",
+    "authors": [
+        "bitExpert AG <info@bitExpert.de> (http://www.bitExpert.de)"
+    ],
+    "keywords": [
+        "mntyjs",
+        "mnty.js",
+        "mounty",
+        "mountee",
+        "mountie",
+        "Plugin system",
+        "bitExpert"
+    ],
+    "ignore": [
+        "node_modules",
+        "vendor",
+        "log",
+        ".idea"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bitExpert/mntyjs.git"
+    },
+    "dependencies": {
+        "jquery": "latest",
+        "log4javascript": "https://github.com/avuori/log4javascript-amd.git",
+        "requirejs": "latest"
+    }
 }
