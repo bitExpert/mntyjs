@@ -20,7 +20,7 @@ module.exports = function (grunt) {
                     paths: {
                         requireLib: '../vendor/requirejs/require',
                         jquery: '../vendor/jquery/dist/jquery',
-                        log4js: '../vendor/log4javascript/js/log4javascript_uncompressed',
+                        log4js: '../vendor/log4javascript/log4javascript_uncompressed',
                         BaseClass: '../lib/Base'
                     },
                     include: [
@@ -41,7 +41,7 @@ module.exports = function (grunt) {
                     paths: {
                         requireLib: '../vendor/requirejs/require',
                         jquery: '../vendor/jquery/dist/jquery',
-                        log4js: '../vendor/log4javascript/js/log4javascript_uncompressed',
+                        log4js: '../vendor/log4javascript/log4javascript_uncompressed',
                         BaseClass: '../lib/Base'
                     },
                     include: [
