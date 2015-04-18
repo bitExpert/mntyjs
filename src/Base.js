@@ -41,38 +41,23 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
      * @param {Function} updater
      * @returns {Function}
      */
-    generateSetter = function generateSetter (scope, property, applier, updater) {
+    generateSetter = function generateSetter (scope, property) {
+        var applierName = getFunctionName('apply', property),
+            updaterName = getFunctionName('update', property),
+            applier = scope[applierName],
+            updater = scope[updaterName];
+
         return function (value) {
             var formerValue = scope._config[property],
-                appliedValue = applier.call(scope, value);
+                appliedValue = applier ? applier.call(scope, value) : value;
 
             //@TODO: check performance of deep equality determinition
             if (typeof appliedValue === 'object' || typeof formerValue === 'object' || appliedValue !== formerValue) {
                 scope._config[property] = appliedValue;
-                updater.call(scope, appliedValue, formerValue);
+                if (updater) {
+                    updater.call(scope, appliedValue, formerValue);
+                }
             }
-        };
-    };
-
-    /**
-     * Generates a stub updater function
-     *
-     * @returns {Function}
-     */
-    generateUpdater = function generateUpdater () {
-        return function () {
-
-        };
-    };
-
-    /**
-     * Generates a stub applier function
-     *
-     * @returns {Function}
-     */
-    generateApplier = function generateApplier () {
-        return function (value) {
-            return value;
         };
     };
 
@@ -115,33 +100,23 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
             var me = this,
                 config = me.config,
                 property,
+                applier,
+                updater,
                 setterName,
-                getterName,
-                applierName,
-                updaterName;
+                getterName;
 
             // generate magic methods for config properties
             for (property in config) {
                 if (config.hasOwnProperty(property)) {
                     setterName = getFunctionName('set', property);
                     getterName = getFunctionName('get', property);
-                    applierName = getFunctionName('apply', property);
-                    updaterName = getFunctionName('update', property);
 
                     if (!me[getterName]) {
                         me[getterName] = generateGetter(me, property);
                     }
 
-                    if (!me[applierName]) {
-                        me[applierName] = generateApplier();
-                    }
-
-                    if (!me[updaterName]) {
-                        me[updaterName] = generateUpdater(me, property);
-                    }
-
                     if (!me[setterName]) {
-                        me[setterName] = generateSetter(me, property, me[applierName], me[updaterName]);
+                        me[setterName] = generateSetter(me, property);
                     }
                 }
             }
