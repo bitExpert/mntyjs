@@ -278,10 +278,21 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                         pluginClass = plugins[pluginName];
                         options = me.determinePluginOptions(element, pluginName);
 
-                        instance = me.mountToElement(pluginClass, element, options);
-                        instances.push(instance);
-                        initialized.push(me.waitFor(instance, 'initialized'));
-                        executed.push(me.waitFor(instance, 'executed'));
+                        try {
+                            instance = me.mountToElement(pluginClass, element, options);
+                            instances.push(instance);
+                            initialized.push(me.waitFor(instance, 'initialized'));
+                            executed.push(me.waitFor(instance, 'executed'));
+                        } catch (e) {
+                            logger.error(StringUtils.format(
+                                '{0} ocurred while instanciating plugin {1}{2}{3}: {4}',
+                                e.name,
+                                pluginName,
+                                e.file ? 'in file ' + e.file : '',
+                                e.lineNumber ? ':' + e.lineNumber : '',
+                                e.message
+                            ));
+                        }
                     }
                 });
             });
