@@ -41,7 +41,12 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
      * @param {Function} updater
      * @returns {Function}
      */
-    generateSetter = function generateSetter (scope, property, applier, updater) {
+    generateSetter = function generateSetter (scope, property) {
+        var applierName = getFunctionName('apply', property),
+            updaterName = getFunctionName('update', property),
+            applier = scope[applierName],
+            updater = scope[updaterName];
+
         return function (value) {
             var formerValue = scope._config[property],
                 appliedValue = applier ? applier.call(scope, value) : value;
@@ -98,32 +103,20 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
                 applier,
                 updater,
                 setterName,
-                getterName,
-                applierName,
-                updaterName;
+                getterName;
 
             // generate magic methods for config properties
             for (property in config) {
                 if (config.hasOwnProperty(property)) {
                     setterName = getFunctionName('set', property);
                     getterName = getFunctionName('get', property);
-                    applierName = getFunctionName('apply', property);
-                    updaterName = getFunctionName('update', property);
 
                     if (!me[getterName]) {
                         me[getterName] = generateGetter(me, property);
                     }
 
-                    if (me[applierName]) {
-                        applier = me[applierName];
-                    }
-
-                    if (me[updaterName]) {
-                        updater = me[updaterName];
-                    }
-
                     if (!me[setterName]) {
-                        me[setterName] = generateSetter(me, property, applier, updater);
+                        me[setterName] = generateSetter(me, property);
                     }
                 }
             }
