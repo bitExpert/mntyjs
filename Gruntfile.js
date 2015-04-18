@@ -18,9 +18,9 @@ module.exports = function (grunt) {
                     optimize: 'uglify2',
                     preserveLicenseComments: true,
                     paths: {
-                        requireLib: '../vendor/external/requirejs/require',
-                        jquery: '../vendor/external/jquery/dist/jquery',
-                        log4js: '../vendor/external/log4javascript/log4javascript_uncompressed',
+                        requireLib: '../vendor/requirejs/require',
+                        jquery: '../vendor/jquery/dist/jquery',
+                        log4js: '../vendor/log4javascript/js/log4javascript_uncompressed',
                         BaseClass: '../lib/Base'
                     },
                     include: [
@@ -39,9 +39,9 @@ module.exports = function (grunt) {
                     generateSourceMaps: true,
                     preserveLicenseComments: false,
                     paths: {
-                        requireLib: '../vendor/external/requirejs/require',
-                        jquery: '../vendor/external/jquery/dist/jquery',
-                        log4js: '../vendor/external/log4javascript/log4javascript_uncompressed',
+                        requireLib: '../vendor/requirejs/require',
+                        jquery: '../vendor/jquery/dist/jquery',
+                        log4js: '../vendor/log4javascript/js/log4javascript_uncompressed',
                         BaseClass: '../lib/Base'
                     },
                     include: [
@@ -112,13 +112,12 @@ module.exports = function (grunt) {
 
     // Load grunt tasks automatically
     require('load-grunt-tasks')(grunt);
-    grunt.loadNpmTasks('bitexpert-grunt-jshint');
 
     // Define the available tasks
     grunt.registerTask('default', ['jscs:cli']);
     grunt.registerTask('sniff', ['jscs:cli']);
     grunt.registerTask('lint', ['jshint:cli']);
     grunt.registerTask('docs', ['jsdoc']);
-    grunt.registerTask('ci:build', ['jscs:ci', 'jshint:ci', 'requirejs']);
-    grunt.registerTask('build', ['sniff', 'lint', 'requirejs:mnty', 'requirejs:mntydev'])
+    grunt.registerTask('ci:build', ['jscs:ci', 'jshint:ci', 'requirejs:mnty', 'requirejs:mntydev', 'docs']);
+    grunt.registerTask('build', ['sniff', 'lint', 'requirejs:mnty', 'requirejs:mntydev', 'docs']);
 };

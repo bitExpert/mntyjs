@@ -44,35 +44,15 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
     generateSetter = function generateSetter (scope, property, applier, updater) {
         return function (value) {
             var formerValue = scope._config[property],
-                appliedValue = applier.call(scope, value);
+                appliedValue = applier ? applier.call(scope, value) : value;
 
             //@TODO: check performance of deep equality determinition
             if (typeof appliedValue === 'object' || typeof formerValue === 'object' || appliedValue !== formerValue) {
                 scope._config[property] = appliedValue;
-                updater.call(scope, appliedValue, formerValue);
+                if (updater) {
+                    updater.call(scope, appliedValue, formerValue);
+                }
             }
-        };
-    };
-
-    /**
-     * Generates a stub updater function
-     *
-     * @returns {Function}
-     */
-    generateUpdater = function generateUpdater () {
-        return function () {
-
-        };
-    };
-
-    /**
-     * Generates a stub applier function
-     *
-     * @returns {Function}
-     */
-    generateApplier = function generateApplier () {
-        return function (value) {
-            return value;
         };
     };
 
@@ -115,6 +95,8 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
             var me = this,
                 config = me.config,
                 property,
+                applier,
+                updater,
                 setterName,
                 getterName,
                 applierName,
@@ -132,16 +114,16 @@ define(['BaseClass', 'StringUtils'], function (BaseClass, StringUtils) {
                         me[getterName] = generateGetter(me, property);
                     }
 
-                    if (!me[applierName]) {
-                        me[applierName] = generateApplier();
+                    if (me[applierName]) {
+                        applier = me[applierName];
                     }
 
-                    if (!me[updaterName]) {
-                        me[updaterName] = generateUpdater(me, property);
+                    if (me[updaterName]) {
+                        updater = me[updaterName];
                     }
 
                     if (!me[setterName]) {
-                        me[setterName] = generateSetter(me, property, me[applierName], me[updaterName]);
+                        me[setterName] = generateSetter(me, property, applier, updater);
                     }
                 }
             }
