@@ -3,13 +3,18 @@
  *
  * @preserve Copyright 2015 bitExpert AG
  */
-require(['PluginManager', 'OptionParser', 'jquery'], function (PluginManager, OptionParser, $) {
+require(['PluginManager', 'OptionParser', 'jquery', 'Window'], function (PluginManager, OptionParser, $, Window) {
 
     var config = $('script[data-mntyjs]').data('mntyjs');
 
     config = OptionParser.parse(config);
-    $(document).ready(function () {
+
+    $(Window.document).ready(function () {
         PluginManager.reconfigure(config);
-        PluginManager.boot();
+        PluginManager.mount(Window.document);
+    });
+
+    $(Window).on('beforeunload', function () {
+        PluginManager.unmount(Window.document);
     });
 });

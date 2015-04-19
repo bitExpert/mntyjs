@@ -1,5 +1,5 @@
 /**
- * Base class with attached EventManager to provide event firing and event listener attachment
+ * Module providing basic string functionality
  *
  * @module StringUtils
  */

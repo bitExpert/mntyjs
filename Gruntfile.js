@@ -21,7 +21,8 @@ module.exports = function (grunt) {
                         requireLib: '../vendor/requirejs/require',
                         jquery: '../vendor/jquery/dist/jquery',
                         log4js: '../vendor/log4javascript/log4javascript_uncompressed',
-                        BaseClass: '../lib/Base'
+                        BaseClass: '../lib/Base',
+                        MutationObserver: '../lib/MutationObserver'
                     },
                     include: [
                         'requireLib',
@@ -42,7 +43,8 @@ module.exports = function (grunt) {
                         requireLib: '../vendor/requirejs/require',
                         jquery: '../vendor/jquery/dist/jquery',
                         log4js: '../vendor/log4javascript/log4javascript_uncompressed',
-                        BaseClass: '../lib/Base'
+                        BaseClass: '../lib/Base',
+                        MutationObserver: '../lib/MutationObserver'
                     },
                     include: [
                         'requireLib',
@@ -118,6 +120,6 @@ module.exports = function (grunt) {
     grunt.registerTask('sniff', ['jscs:cli']);
     grunt.registerTask('lint', ['jshint:cli']);
     grunt.registerTask('docs', ['jsdoc']);
-    grunt.registerTask('ci:build', ['jscs:ci', 'jshint:ci', 'requirejs:mnty', 'requirejs:mntydev', 'docs']);
-    grunt.registerTask('build', ['sniff', 'lint', 'requirejs:mnty', 'requirejs:mntydev', 'docs']);
+    grunt.registerTask('ci:build', ['jscs:ci', 'jshint:ci', 'requirejs', 'docs']);
+    grunt.registerTask('build', ['sniff', 'lint', 'requirejs:mnty', 'requirejs:mntydev', 'docs'])
 };

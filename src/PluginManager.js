@@ -4,10 +4,26 @@
  * @private
  * @module PluginManager
  */
-define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $) {
+define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'Window', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, Window, FnUtils) {
     var PluginManager,
-        instances = [],
-        logger = Logging.getLogger('PluginManager');
+        instances = {},
+        mutationObserver,
+        logger = Logging.getLogger('PluginManager'),
+        currId = 1;
+
+    /**
+     * Ensures data- prefix for given attribute
+     *
+     * @param attr
+     * @returns {String}
+     */
+    function convertToDataAttribute (attr) {
+        if (attr.substr(0, 5) !== 'data-') {
+            attr = 'data-' + attr;
+        }
+
+        return attr;
+    }
 
     PluginManager = Observable.extend({
         config: {
@@ -15,21 +31,67 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             loggingEnabled: false,
             disabledPlugins: [],
             baseUrl: '',
-            mountPoint: 'mount'
+            mountPoint: 'mount',
+            idProperty: 'mid'
+        },
+        constructor: function () {
+            var me = this,
+                cb = FnUtils.bind(me.handleMutations, me);
+
+            me.base();
+            mutationObserver = new Window.MutationObserver(cb);
         },
         /**
-         * Registers the system to the document ready and window unload events
+         * Handles any mutation of the DOM
          */
-        boot: function () {
+        handleMutations: function (mutations) {
             var me = this;
 
-            $(document).ready(function () {
-                me.run();
+            $.each(mutations, function (index, mutation) {
+                me.handleMutation(mutation);
+            });
+        },
+        /**
+         * Handles a single mutation
+         *
+         * @param {MutationRecord} mutationRecord
+         */
+        handleMutation: function (mutationRecord) {
+            var me = this,
+                type = StringUtils.ucFirst(mutationRecord.type),
+                handler = StringUtils.format('handle{0}Mutation', type);
+
+            if (me[handler]) {
+                me[handler].call(me, mutationRecord);
+            }
+        },
+        /**
+         * Handles a child list mutation
+         *
+         * @param {MutationRecord} mutationRecord
+         */
+        handleChildListMutation: function (mutationRecord) {
+            var me = this,
+                addedNodes = mutationRecord.addedNodes,
+                removedNodes = mutationRecord.removedNodes;
+
+            $.each(addedNodes, function (index, node) {
+                logger.debug('Node addition detected. Performing process for element...');
+                me.process(node);
             });
 
-            $(window).on('beforeunload', function () {
-                me.shutdown();
+            $.each(removedNodes, function (index, node) {
+                logger.debug('Node removal detected. Performing destroy for element...');
+                me.destroyPluginsOfElement(node);
             });
+        },
+        /**
+         * Handles an attribute mutation
+         *
+         * @param {MutationRecord} mutationRecord
+         */
+        handleAttributesMutation: function (mutationRecord) {
+            console.log('attributes!', mutationRecord);
         },
         /**
          * Converts the mount point value to a valid data-* attribute
@@ -39,13 +101,17 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          * @returns {String}
          */
         applyMountPoint: function (mountPoint) {
-            if (mountPoint.substr(0, 5) !== 'data-') {
-                mountPoint = 'data-' + mountPoint;
-            }
-
-            //@TODO: Check validity of dataAttr and throw error if invalid
-
-            return mountPoint;
+            return convertToDataAttribute(mountPoint);
+        },
+        /**
+         * Converts the mount point value to a valid data-* attribute
+         *
+         * @private
+         * @param {String} mountPoint
+         * @returns {String}
+         */
+        applyIdProperty: function (id) {
+            return convertToDataAttribute(id);
         },
         /**
          * Prepares the plugin load path (strips trailing slashes)
@@ -57,59 +123,153 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
         applyLoadFrom: function (loadFrom) {
             return loadFrom.replace(/\/$/, '');
         },
-
+        /**
+         * Activates / deactivates logging
+         *
+         * @private
+         * @param {Boolean} loggingEnabled Whether logging should be enabled or not
+         */
+        updateLoggingEnabled: function (loggingEnabled) {
+            Logging.setEnabled(loggingEnabled);
+        },
         /**
          * Updates the base url for requirejs
          *
          * @private
-         * @param {String} baseUrl
+         * @param {String} baseUrl The baseUrl the PluginManager should run from
          */
         updateBaseUrl: function (baseUrl) {
             require.config({
                 baseUrl: baseUrl
             });
         },
-
         /**
-         * Runs all the stuff
+         * Mounts the manager to given element
          *
          * @private
          */
-        run: function () {
+        mount: function (root) {
             var me = this,
-                elements,
-                pluginNames;
+                mountPoint = me.getMountPoint();
 
-            logger.debug('RUN');
+            logger.debug('MOUNT');
 
-            elements = me.lookupElements();
+            mutationObserver.observe(root, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attriuteOldValue: true,
+                attributeFilter: [
+                    mountPoint
+                ]
+            });
 
-            pluginNames = me.determineUsedPlugins(elements);
+            me.process(root);
+        },
+        /**
+         * Processes mounting for given root element
+         *
+         * @param {HTMLElement} root
+         */
+        process: function (root) {
+            var me = this,
+                elements = me.lookupElements(root),
+                pluginNames = me.determineUsedPlugins(elements);
 
+            logger.debug('PROCESSING NODES...');
             me.fetchPlugins(pluginNames, function (plugins) {
                 me.mountAll(elements, plugins);
             });
         },
-
         /**
-         * Shuts down everything
+         * Unmounts the manager from given element
+         *
          * @private
          */
-        shutdown: function () {
-            $.each(instances, function (index, instance) {
-                if (instance) {
-                    instance.destroy();
-                    delete instances[index];
-                }
+        unmount: function (root) {
+            logger.debug('UNMOUNT');
+
+            mutationObserver.disconnect();
+            this.destroyPluginsOfElement(root);
+        },
+        /**
+         * Destroys all plugins of given element
+         *
+         * @param {HTMLElement} element
+         */
+        destroyPluginsOfElement: function (element) {
+            var me = this,
+                elements = me.lookupElements(element);
+
+            $.each(elements, function (index, element) {
+                var id = me.getElementId(element);
+                me.destroyPluginsOfId(id);
             });
         },
+        /**
+         * Destroys all plugin instances of element with
+         * given internal id
+         *
+         * @param {Integer} id The internal id of the element
+         */
+        destroyPluginsOfId: function (id) {
+            var me = this,
+                plugins = instances[id];
 
+            if (!plugins) {
+                return;
+            }
+
+            $.each(Object.keys(plugins), function (index, pluginName) {
+                me.destroyPluginOfId(id, pluginName);
+            });
+        },
+        /**
+         * Destroys the plugin with given name of element with
+         * given internal id
+         *
+         * @private
+         * @param {Integer} id The internal id of the element
+         * @param {String} pluginName The plugin's name
+         */
+        destroyPluginOfId: function (id, pluginName) {
+            if (!instances[id] || !instances[id][pluginName]) {
+                return;
+            }
+
+            logger.debug(StringUtils.format(
+                'Destroying plugin {0} of element {1}',
+                pluginName,
+                id
+            ));
+
+            instances[id][pluginName].destroy();
+
+            delete instances[id][pluginName];
+
+            if (!Object.keys(instances[id]).length) {
+                delete instances[id];
+            }
+        },
+        /**
+         * Destroys the plugin instance of given name for given element
+         *
+         * @private
+         * @param {HTMLElement} element The HTML element
+         * @param {String} pluginName The plugin's name
+         */
+        destroyPluginOfElement: function (element, pluginName) {
+            var me = this,
+                id = this.getElementId(element);
+
+            me.destroyPluginOfId(id, pluginName);
+        },
         /**
          * Determines the plugins which are used by the given elements
          * and returns an array with the appropriate plugin names
          *
          * @private
-         * @param elements
+         * @param {Array} elements The elements to scan for plugins
          * @returns {Array}
          */
         determineUsedPlugins: function (elements) {
@@ -130,13 +290,12 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
             return allPlugins;
         },
-
         /**
          * Determines the used plugins for the given element
          * and returns their names as array
          *
          * @private
-         * @param element
+         * @param {HTMLElement) element The element to scan for plugins
          * @returns {Array}
          */
         determineElementPlugins: function (element) {
@@ -152,13 +311,12 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
             return plugins;
         },
-
         /**
          * Returns the options of the plugin with given name for the given element
          *
          * @private
-         * @param element
-         * @param pluginName
+         * @param {HTMLElement} element The element to retrieve the plugin options from
+         * @param {String} pluginName The name of the plugin to retrieve the options for
          * @returns {Object}
          */
         determinePluginOptions: function (element, pluginName) {
@@ -167,7 +325,6 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
             return OptionParser.parse(options);
         },
-
         /**
          * Performs a lookup for elements in the DOM which use plugins
          * and returns them
@@ -175,13 +332,12 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          * @private
          * @returns {jQuery}
          */
-        lookupElements: function () {
+        lookupElements: function (root) {
             var me = this,
                 mountPoint = me.getMountPoint();
 
-            return $('[' + mountPoint + ']');
+            return $('[' + mountPoint + ']', root).add(root);
         },
-
         /**
          * Fetches the needed plugins by requiring them by name
          *
@@ -203,15 +359,6 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                     plugin
                 ].join('/');
             }
-
-            /*$.each(plugins, function (index, plugin) {
-                var path = toPath(plugin);
-                paths[path] = path;
-            });
-            console.log(paths);
-            require.config({
-                paths: paths
-            });*/
 
             $.each(plugins, function (index, plugin) {
                 var deferred = $.Deferred(),
@@ -241,7 +388,6 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 cb(fetchedPlugins);
             });
         },
-
         /**
          * Mounts all plugin / options / element combinations
          *
@@ -256,7 +402,9 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
             logger.debug('Applying plugins to elements...');
             $.each(elements, function (index, element) {
-                var elPlugins = me.determineElementPlugins(element);
+                var elPlugins = me.determineElementPlugins(element),
+                    id = me.addIdToElement(element);
+
                 logger.debug(StringUtils.format(
                     'Processing element [Tag:{0}, Plugins: [{1}], Classes: [{2}], ID: {3}]...',
                     element.tagName,
@@ -264,6 +412,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                     element.className,
                     element.id
                 ));
+
                 $.each(elPlugins, function (index, pluginName) {
                     var pluginClass,
                         options,
@@ -277,6 +426,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
                         pluginClass = plugins[pluginName];
                         options = me.determinePluginOptions(element, pluginName);
+<<<<<<< HEAD
 
                         try {
                             instance = me.mountToElement(pluginClass, element, options);
@@ -293,6 +443,24 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                                 e.message
                             ));
                         }
+=======
+                        instance = me.mountToElement(pluginClass, element, options);
+
+                        if (!instances[id]) {
+                            instances[id] = {};
+                        }
+
+                        instances[id][pluginName] = instance;
+
+                        logger.debug(StringUtils.format(
+                            'Created instance of plugin {0} for element with id {1}',
+                            pluginName,
+                            id
+                        ));
+
+                        initialized.push(me.waitFor(instance, 'initialized'));
+                        executed.push(me.waitFor(instance, 'executed'));
+>>>>>>> added mutation observer to handle dynamicly loaded plugins
                     }
                 });
             });
@@ -313,21 +481,49 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 me.fire('pluginsexecuted');
             });
         },
-
         /**
          * Creates an instances of the given plugin class for the given
          * element using the given options
          *
          * @private
          * @param {Plugin} PluginClass The Plugin to apply
-         * @param {DOMElement} element The element to mount the plugin to
+         * @param {HTMLElement} element The element to mount the plugin to
          * @param {Object} options Configuration options
          * @returns {Plugin} The resulting plugin instance
          */
         mountToElement: function (PluginClass, element, options) {
             return new PluginClass(options, element, this);
         },
+        /**
+         * Adds an id for internal use to the given element
+         *
+         * @private
+         * @param {HTMLElement} element The element to add the id to
+         */
+        addIdToElement: function (element) {
+            var $el = $(element),
+                idProp = this.getIdProperty(),
+                id = $el.attr(idProp);
 
+            if (!id) {
+                id = currId++;
+                $el.attr(idProp, id);
+            }
+
+            return id;
+        },
+        /**
+         * Returns the internal id of the given element
+         *
+         * @private
+         * @param {HTMLElement} element The element to determine the id from
+         * @returns {Integer}
+         */
+        getElementId: function (element) {
+            var idProp = this.getIdProperty();
+
+            return parseInt($(element).attr(idProp), 10);
+        },
         /**
          * Creates a deferred object for the given event on the given instance
          *
@@ -345,7 +541,6 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
             return dfd;
         },
-
         /**
          * Returns if the plugin with the given name is disabled
          *
@@ -358,16 +553,6 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 disabledPlugins = me.getDisabledPlugins();
 
             return (disabledPlugins.indexOf(pluginName) > -1);
-        },
-
-        /**
-         * Activates / deactivates logging
-         *
-         * @private
-         * @param {Boolean} loggingEnabled Whether logging should be enabled or not
-         */
-        updateLoggingEnabled: function (loggingEnabled) {
-            Logging.setEnabled(loggingEnabled);
         }
     });
 
