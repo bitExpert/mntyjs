@@ -1,6 +1,6 @@
 {
     "name": "mntyjs",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "licence": "Apache-2.0",
     "moduleType": "amd",
     "authors": [
@@ -25,7 +25,7 @@
         "type": "git",
         "url": "https://github.com/bitExpert/mntyjs.git"
     },
-    "dependencies": {
+    "devDependencies": {
         "jquery": "latest",
         "log4javascript": "https://github.com/avuori/log4javascript-amd.git",
         "requirejs": "latest"
