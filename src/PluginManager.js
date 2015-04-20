@@ -4,7 +4,7 @@
  * @private
  * @module PluginManager
  */
-define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'Window', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, Window, FnUtils) {
+define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'MutationObserver', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, MutationObserver, FnUtils) {
     var PluginManager,
         instances = {},
         mutationObserver,
@@ -39,7 +39,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 cb = FnUtils.bind(me.handleMutations, me);
 
             me.base();
-            mutationObserver = new Window.MutationObserver(cb);
+            mutationObserver = new MutationObserver(cb);
         },
         /**
          * Handles any mutation of the DOM
@@ -76,12 +76,10 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 removedNodes = mutationRecord.removedNodes;
 
             $.each(addedNodes, function (index, node) {
-                logger.debug('Node addition detected. Performing process for element...');
                 me.process(node);
             });
 
             $.each(removedNodes, function (index, node) {
-                logger.debug('Node removal detected. Performing destroy for element...');
                 me.destroyPluginsOfElement(node);
             });
         },
@@ -91,7 +89,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          * @param {MutationRecord} mutationRecord
          */
         handleAttributesMutation: function (mutationRecord) {
-            console.log('attributes!', mutationRecord);
+            //@TODO: Implement dynamic mountPoint value change (adding / removing plugins)
         },
         /**
          * Converts the mount point value to a valid data-* attribute
@@ -174,9 +172,14 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
         process: function (root) {
             var me = this,
                 elements = me.lookupElements(root),
-                pluginNames = me.determineUsedPlugins(elements);
+                pluginNames;
 
-            logger.debug('PROCESSING NODES...');
+            if (!elements.length) {
+                return;
+            }
+
+            logger.debug('Processing nodes...');
+            pluginNames = me.determineUsedPlugins(elements);
             me.fetchPlugins(pluginNames, function (plugins) {
                 me.mountAll(elements, plugins);
             });
@@ -334,9 +337,12 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          */
         lookupElements: function (root) {
             var me = this,
-                mountPoint = me.getMountPoint();
+                mountPoint = me.getMountPoint(),
+                selector = '[' + mountPoint + ']',
+                elements = $(selector, root).addBack(selector);
 
-            return $('[' + mountPoint + ']', root).add(root);
+
+            return elements;
         },
         /**
          * Fetches the needed plugins by requiring them by name

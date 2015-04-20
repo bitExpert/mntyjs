@@ -22,7 +22,8 @@ module.exports = function (grunt) {
                         jquery: '../vendor/jquery/dist/jquery',
                         log4js: '../vendor/log4javascript/log4javascript_uncompressed',
                         BaseClass: '../lib/Base',
-                        MutationObserver: '../lib/MutationObserver'
+                        MutationObserver: '../lib/MutationObserver',
+                        WeakMap: '../lib/WeakMap'
                     },
                     include: [
                         'requireLib',
@@ -44,7 +45,8 @@ module.exports = function (grunt) {
                         jquery: '../vendor/jquery/dist/jquery',
                         log4js: '../vendor/log4javascript/log4javascript_uncompressed',
                         BaseClass: '../lib/Base',
-                        MutationObserver: '../lib/MutationObserver'
+                        MutationObserver: '../lib/MutationObserver',
+                        WeakMap: '../lib/WeakMap'
                     },
                     include: [
                         'requireLib',

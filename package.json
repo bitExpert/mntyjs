@@ -1,6 +1,6 @@
 {
     "name": "mntyjs",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "A lightweight pluginsystem for websites",
     "main": "Gruntfile.js",
     "directories": {
@@ -24,7 +24,7 @@
         "grunt-contrib-requirejs": "^0.4.4",
         "grunt-contrib-watch": "^0.6.1",
         "grunt-jscs": "0.7.x",
-    	"grunt-contrib-jshint": "^0.9.2",
+        "grunt-contrib-jshint": "^0.9.2",
         "grunt-jsdoc": "^0.6.1",
         "grunt-newer": "^0.7.0",
         "grunt-notify": "^0.3.1",
