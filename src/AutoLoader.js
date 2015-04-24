@@ -9,12 +9,16 @@ require(['PluginManager', 'OptionParser', 'jquery', 'Window'], function (PluginM
 
     config = OptionParser.parse(config);
 
-    $(Window.document).ready(function () {
-        PluginManager.reconfigure(config);
-        PluginManager.mount(Window.document);
-    });
+    if (config.autoMount !== false) {
+        $(Window.document).ready(function () {
+            PluginManager.reconfigure(config);
+            PluginManager.mount(Window.document);
+        });
+    }
 
-    $(Window).on('beforeunload', function () {
-        PluginManager.unmount(Window.document);
-    });
+    if (config.autoUnmount !== false) {
+        $(Window).on('beforeunload', function () {
+            PluginManager.unmount(Window.document);
+        });
+    }
 });

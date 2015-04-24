@@ -166,7 +166,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
             var me = this;
             // clear local listeners
             me.unbindSystemMessage();
-            me.logger = undefined;
+            me.logger = null;
         },
 
         /**
@@ -261,13 +261,13 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
                 ));
             }
 
-            callable = this.bind(fn, additionalArgs, appendArgs);
+            callable = me.bind(fn, additionalArgs, appendArgs);
 
             me.boundMessages = me.boundMessages || {};
             me.boundMessages[event] = me.boundMessages[event] || {};
             me.boundMessages[event][fn] = callable;
 
-            me.onSystemMessage(event, callable);
+            me.onSystemMessage(event, callable, me);
         },
 
         /**
@@ -297,7 +297,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
             if (me.boundMessages[event] && me.boundMessages[event][fn]) {
                 callable = me.boundMessages[event][fn];
                 // unbind the function
-                me.unSystemMessage(event, callable);
+                me.unSystemMessage(event, callable, me);
                 // delete the reference to the function
                 delete me.boundMessages[event][fn];
                 // if this event has no more listeners, delete the event scope

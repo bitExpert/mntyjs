@@ -4,7 +4,7 @@
  * @private
  * @module PluginManager
  */
-define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'Window', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, Window, FnUtils) {
+define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'MutationObserver', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, MutationObserver, FnUtils) {
     var PluginManager,
         instances = {},
         mutationObserver,
@@ -39,7 +39,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 cb = FnUtils.bind(me.handleMutations, me);
 
             me.base();
-            mutationObserver = new Window.MutationObserver(cb);
+            mutationObserver = new MutationObserver(cb);
         },
         /**
          * Handles any mutation of the DOM
@@ -338,11 +338,9 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
         lookupElements: function (root) {
             var me = this,
                 mountPoint = me.getMountPoint(),
-                elements = $('[' + mountPoint + ']', root);
+                selector = '[' + mountPoint + ']',
+                elements = $(selector, root).addBack(selector);
 
-            if ($(root).attr(mountPoint)) {
-                elements.add(root);
-            }
 
             return elements;
         },
