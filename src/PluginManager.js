@@ -4,7 +4,7 @@
  * @private
  * @module PluginManager
  */
-define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'MutationObserver', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, MutationObserver, FnUtils) {
+define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'MutationObserver', 'FnUtils', 'when'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, MutationObserver, FnUtils, when) {
     var PluginManager,
         instances = {},
         mutationObserver,
@@ -26,8 +26,9 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
     }
 
     PluginManager = Observable.extend({
+        name: 'PluginManager',
         config: {
-            loadFrom: 'plugin',
+            loadFrom: '',
             loggingEnabled: false,
             disabledPlugins: [],
             baseUrl: '',
@@ -46,10 +47,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          */
         handleMutations: function (mutations) {
             var me = this;
-
-            $.each(mutations, function (index, mutation) {
-                me.handleMutation(mutation);
-            });
+            mutations.forEach(me.handleMutation, me);
         },
         /**
          * Handles a single mutation
@@ -72,16 +70,11 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          */
         handleChildListMutation: function (mutationRecord) {
             var me = this,
-                addedNodes = mutationRecord.addedNodes,
-                removedNodes = mutationRecord.removedNodes;
+                addedNodes = Array.prototype.slice.call(mutationRecord.addedNodes),
+                removedNodes = Array.prototype.slice.call(mutationRecord.removedNodes);
 
-            $.each(addedNodes, function (index, node) {
-                me.process(node);
-            });
-
-            $.each(removedNodes, function (index, node) {
-                me.destroyPluginsOfElement(node);
-            });
+            addedNodes.forEach(me.process, me);
+            removedNodes.forEach(me.unmountPluginsOfRoot, me);
         },
         /**
          * Handles an attribute mutation
@@ -193,29 +186,36 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             logger.debug('UNMOUNT');
 
             mutationObserver.disconnect();
-            this.destroyPluginsOfElement(root);
+            this.unmountPluginsOfRoot(root);
         },
         /**
-         * Destroys all plugins of given element
+         * Unmounts all plugins of given element
          *
          * @param {HTMLElement} element
          */
-        destroyPluginsOfElement: function (element) {
+        unmountPluginsOfRoot: function (element) {
             var me = this,
                 elements = me.lookupElements(element);
 
-            $.each(elements, function (index, element) {
-                var id = me.getElementId(element);
-                me.destroyPluginsOfId(id);
-            });
+            elements.forEach(me.unmountPluginsFromElement, me);
         },
         /**
-         * Destroys all plugin instances of element with
+         *
+         * @param element
+         */
+        unmountPluginsFromElement: function (element) {
+            var me = this,
+                id = me.getElementId(element);
+
+            me.unmountPluginsFromId(id);
+        },
+        /**
+         * Unmounts all plugin instances of element with
          * given internal id
          *
          * @param {Integer} id The internal id of the element
          */
-        destroyPluginsOfId: function (id) {
+        unmountPluginsFromId: function (id) {
             var me = this,
                 plugins = instances[id];
 
@@ -223,49 +223,43 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 return;
             }
 
-            $.each(Object.keys(plugins), function (index, pluginName) {
-                me.destroyPluginOfId(id, pluginName);
+            //@TODO: Optimize for more functional style
+            Object.keys(plugins).forEach(function (pluginName) {
+                me.unmountPluginFromId(id, pluginName);
             });
         },
         /**
-         * Destroys the plugin with given name of element with
+         * Unmounts the plugin with given name of element with
          * given internal id
          *
          * @private
          * @param {Integer} id The internal id of the element
          * @param {String} pluginName The plugin's name
          */
-        destroyPluginOfId: function (id, pluginName) {
+        unmountPluginFromId: function (id, pluginName) {
             if (!instances[id] || !instances[id][pluginName]) {
                 return;
             }
 
             logger.debug(StringUtils.format(
-                'Destroying plugin {0} of element {1}',
+                'Unmounting plugin {0} from element[{1}]...',
                 pluginName,
                 id
             ));
 
-            instances[id][pluginName].destroy();
+            instances[id][pluginName].unmount();
+
+            logger.debug(StringUtils.format(
+                'Successfully unmounted plugin {0} from element[{1}].',
+                pluginName,
+                id
+            ));
 
             delete instances[id][pluginName];
 
             if (!Object.keys(instances[id]).length) {
                 delete instances[id];
             }
-        },
-        /**
-         * Destroys the plugin instance of given name for given element
-         *
-         * @private
-         * @param {HTMLElement} element The HTML element
-         * @param {String} pluginName The plugin's name
-         */
-        destroyPluginOfElement: function (element, pluginName) {
-            var me = this,
-                id = this.getElementId(element);
-
-            me.destroyPluginOfId(id, pluginName);
         },
         /**
          * Determines the plugins which are used by the given elements
@@ -279,10 +273,11 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             var me = this,
                 allPlugins = [];
 
-            $.each(elements, function (index, el) {
-                var plugins = me.determineElementPlugins(el);
+            //@TODO: Optimize to more functional style
+            elements.forEach(function (element) {
+                var plugins = me.determineElementPlugins(element);
 
-                $.each(plugins, function (index, plugin) {
+                plugins.forEach(function (plugin) {
                     if ((allPlugins.indexOf(plugin) < 0) &&
                         !me.isPluginDisabled(plugin)) {
 
@@ -339,7 +334,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             var me = this,
                 mountPoint = me.getMountPoint(),
                 selector = '[' + mountPoint + ']',
-                elements = $(selector, root).addBack(selector);
+                elements = $(selector, root).addBack(selector).toArray();
 
 
             return elements;
@@ -354,8 +349,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
         fetchPlugins: function (plugins, cb) {
             var me = this,
                 fetchedPlugins = {},
-                deferreds = [];/*,
-                paths = {};*/
+                dfds = [];
 
             function toPath (plugin) {
                 var pluginLoadPath = me.getLoadFrom();
@@ -366,31 +360,32 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 ].join('/');
             }
 
-            $.each(plugins, function (index, plugin) {
-                var deferred = $.Deferred(),
+            //@TODO: Optimize to more functional style
+            plugins.forEach(function (plugin) {
+                var dfd = when.defer(),
                     pluginPath = toPath(plugin);
 
-                deferreds.push(deferred);
+                dfds.push(dfd.promise);
 
                 require([pluginPath], function (Plugin) {
                     fetchedPlugins[plugin] = Plugin;
-                    deferred.resolve(plugin);
+                    dfd.resolve(plugin);
                 }, function (err) {
                     fetchedPlugins[plugin] = Plugin.extend({
                         init: function () {
                             logger.warn(StringUtils.format(
-                                'Could not load plugin {0} due to error:\n{1}',
+                                'Could not load plugin "{0}" due to error:\n{1}',
                                 plugin,
                                 err.message
                             ));
                         }
                     });
-                    deferred.resolve(plugin);
+                    dfd.resolve(plugin);
                 });
             });
 
             // execute the callback as soon as all plugins have been loaded
-            $.when.apply($, deferreds).done(function () {
+            when.all(dfds).then(function () {
                 cb(fetchedPlugins);
             });
         },
@@ -406,28 +401,34 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 initialized = [],
                 executed = [];
 
-            logger.debug('Applying plugins to elements...');
-            $.each(elements, function (index, element) {
+            logger.debug('Mounting plugins to elements...');
+            //@TODO: Optimize to more functional style
+            elements.forEach(function (element) {
                 var elPlugins = me.determineElementPlugins(element),
                     id = me.addIdToElement(element);
 
                 logger.debug(StringUtils.format(
-                    'Processing element [Tag:{0}, Plugins: [{1}], Classes: [{2}], ID: {3}]...',
+                    'Processing element with id {0} [Tag:{1}, Plugins: [{2}], Classes: [{3}], ID: {4}]...',
+                    id,
                     element.tagName,
                     elPlugins.join(', '),
                     element.className,
                     element.id
                 ));
 
-                $.each(elPlugins, function (index, pluginName) {
+                //@TODO: Optimize to more functional style
+                elPlugins.forEach(function (pluginName) {
                     var pluginClass,
                         options,
                         instance;
 
+                    pluginName = $.trim(pluginName);
+
                     if (!me.isPluginDisabled(pluginName)) {
                         logger.debug(StringUtils.format(
-                            'Applying plugin "{0}"...',
-                            pluginName
+                            'Mounting plugin {0} to element[{1}]...',
+                            pluginName,
+                            id
                         ));
 
                         pluginClass = plugins[pluginName];
@@ -443,16 +444,16 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                             instances[id][pluginName] = instance;
 
                             logger.debug(StringUtils.format(
-                                'Created instance of plugin {0} for element with id {1}',
+                                'Successfully mounted instance of plugin "{0}" to element[{1}]',
                                 pluginName,
                                 id
                             ));
 
-                            initialized.push(me.waitFor(instance, 'initialized'));
-                            executed.push(me.waitFor(instance, 'executed'));
+                            initialized.push(me.waitOnceFor(instance, 'initialized'));
+                            executed.push(me.waitOnceFor(instance, 'executed'));
                         } catch (e) {
                             logger.error(StringUtils.format(
-                                '{0} ocurred while instanciating plugin {1}{2}{3}: {4}',
+                                '{0} ocurred while instanciating plugin "{1}{2}{3}": {4}',
                                 e.name,
                                 pluginName,
                                 e.file ? 'in file ' + e.file : '',
@@ -464,19 +465,20 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
                 });
             });
 
-            logger.debug('Prepared.');
             // fire "prepared" event
+            logger.debug('Done.');
+            logger.debug('Waiting for plugins to be initialized...');
             me.fire('prepared');
 
             // fire "ready" event, as soon as all plugins have been initialized
-            $.when.apply($, initialized).done(function () {
-                logger.debug('Plugins initialized.');
+            when.all(initialized).then(function () {
+                logger.debug('All plugins initialized. Waiting for all plugins to be executed...');
                 me.fire('ready');
             });
 
             // fire "pluginsexecuted" event, as soon as all plugins have finished their execution
-            $.when.apply($, executed).done(function () {
-                logger.debug('Plugins executed.');
+            when.all(executed).then(function () {
+                logger.debug('All plugins executed.');
                 me.fire('pluginsexecuted');
             });
         },
@@ -531,14 +533,14 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          * @param {String} event The name of the event to wait for
          * @returns {Deferred} Deferred object which will be resolved when finished
          */
-        waitFor: function (instance, event) {
-            var dfd = $.Deferred();
+        waitOnceFor: function (instance, event) {
+            var dfd = when.defer();
 
             instance.on(event, function () {
                 dfd.resolve();
-            });
+            }, instance, true);
 
-            return dfd;
+            return dfd.promise;
         },
         /**
          * Returns if the plugin with the given name is disabled

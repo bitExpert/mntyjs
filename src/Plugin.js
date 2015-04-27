@@ -1,4 +1,4 @@
-define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (Observable, Logging, StringUtils, FnUtils, $) {
+define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], function (Observable, Logging, StringUtils, FnUtils, $, when) {
     var createDelegate,
         Plugin;
 
@@ -24,7 +24,8 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
         $element: null,
         name: 'Plugin',
         logger: null,
-        boundMessages: {},
+        _boundMessages: null,
+        _boundFns: null,
         /**
          * The plugin's constructor
          *
@@ -34,12 +35,14 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
          */
         constructor: function (options, element, system) {
             var me = this;
-            me.boundMessages = {};
+
+            me._boundMessages = {};
+            me._boundFns = [];
 
             me.logger = Logging.getLogger(me.name + '(Plugin)');
 
             if (element) {
-                me.applyElement(element);
+                me.$element = $(element);
             }
 
             if (system) {
@@ -47,7 +50,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
                 me.attachSystemListeners();
             }
 
-            this.base();
+            me.base();
 
             if (options) {
                 me.reconfigure(options);
@@ -61,9 +64,9 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
         attachSystemListeners: function () {
             var me = this;
 
-            me.onSystemMessage('prepared', me.onSystemPrepared, me);
-            me.onSystemMessage('ready', me.onSystemReady, me);
-            me.onSystemMessage('pluginsexecuted', me.onPluginsExecuted, me);
+            me.bindSystemMessage('prepared', 'onSystemPrepared', true);
+            me.bindSystemMessage('ready', 'onSystemReady', true);
+            me.bindSystemMessage('pluginsexecuted', 'onPluginsExecuted', true);
         },
         /**
          * Lazyly attaches the system delegate functions after system has been injected
@@ -78,20 +81,12 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
             me.unSystemMessage = createDelegate(system, 'un');
             me.sendSystemMessage = createDelegate(system, 'fire');
         },
-        /**
-         * Applies given element to the plugin and automatically
-         * generates the relevant jQuery object for it which accessible
-         * via this.$element afterwards
-         *
-         * @param {DOMElement} element
-         * @private
-         */
-        applyElement: function (element) {
-            var me = this;
 
-            if (element) {
-                me.$element = $(element);
-            }
+        detachSystemDelegates: function () {
+            var me = this;
+            me.onSystemMessage = null;
+            me.unSystemMessage = null;
+            me.sendSystemMessage = null;
         },
 
         /**
@@ -101,21 +96,28 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
          * @private
          */
         onSystemPrepared: function () {
-            var me = this;
+            var me = this,
+                dfd = when.defer(),
+                result;
 
-            me.unSystemMessage('prepared', me.onSystemPrepared, me);
             try {
-                me.init();
+                result = me.init(dfd);
             } catch (e) {
                 me.logger.error(StringUtils.format(
-                   'Error while initializing Plugin {0}: {1}',
+                   'Error while initializing plugin "{0}": {1}',
                    me.name,
                    e.message
                 ));
             }
 
-            // fire event although an error occured to keep the system running
-            me.fire('initialized');
+            // fire event although an error occured to keep system running
+            if (!result) {
+                me.fire('initialized');
+            } else {
+                when(result).done(function () {
+                    me.fire('initialized');
+                });
+            }
         },
 
         /**
@@ -126,15 +128,14 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
          */
         onSystemReady: function () {
             var me = this,
-                dfd = $.Deferred(),
+                dfd = when.defer(),
                 result;
 
-            me.unSystemMessage('ready', me.onSystemReady, me);
             try {
                 result = me.execute(dfd);
             } catch (e) {
                 me.logger.error(StringUtils.format(
-                    'Error while executing Plugin {0}: {1}',
+                    'Error while executing plugin "{0}": {1}',
                     me.name,
                     e.message
                 ));
@@ -144,7 +145,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
             if (!result) {
                 me.fire('executed');
             } else {
-                $.when(result).done(function () {
+                when(result).done(function () {
                     me.fire('executed');
                 });
             }
@@ -160,19 +161,36 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
             return $(selector, this.$element);
         },
         /**
-         * Destroys the plugin
+         * Unmounts the plugin (this is the real destroy)
          */
-        destroy: function () {
+        unmount: function () {
             var me = this;
             // clear local listeners
             me.unbindSystemMessage();
+            me.detachSystemDelegates();
+            me._boundFns = null;
+            me._boundMessages = null;
+            me.destroy();
+            me.$element = null;
             me.logger = null;
         },
+        /**
+         * Destroy hook for inheriting plugins
+         */
+        destroy: function () {
 
+        },
         /**
          * Initializes the plugin / prepares it for execution
+         *
+         * If want to make use of the given dfd object, just use it inside the
+         * function and return it, then it will wait for the promise to be fulfilled
+         *
+         * @param {Object} [dfd] The optional deferrable
          */
-        init: function () {},
+        init: function (dfd) {
+
+        },
         /**
          * Executes the plugin. Either you can just implement the function
          * then the plugin event "executed" will be propagated immediately.
@@ -180,14 +198,10 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
          * If want to make use of the given dfd object, just use it inside the
          * function and return it, then it will wait for the promise to be fulfilled
          *
-         * @param {Object} dfd The optional deferrable
+         * @param {Object} [dfd] The optional deferrable
          */
         execute: function (dfd) {
-            if (dfd) {
-                dfd.resolve();
-            }
 
-            return dfd;
         },
 
         /**
@@ -196,7 +210,6 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
          */
         onPluginsExecuted: function () {
             var me = this;
-            me.unSystemMessage('pluginsexecuted', me.onPluginsExecuted, me);
             me.onFinished();
         },
 
@@ -212,7 +225,8 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
         bind: function (fn, additionalArgs, appendArgs) {
             var me = this,
                 local = false,
-                message;
+                message,
+                _boundFn;
 
             // if given fn is a string, bind to local function with that name
             if (StringUtils.isString(fn)) {
@@ -239,7 +253,9 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
                 throw new Error(message);
             }
 
-            return FnUtils.bind(fn, me, additionalArgs, appendArgs);
+            _boundFn  = FnUtils.bind(fn, me, additionalArgs, appendArgs);
+            me._boundFns.push(_boundFn);
+            return _boundFn;
         },
 
         /**
@@ -250,7 +266,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
          * @param {Array} additionalArgs Additional arguments to call, when the function is called
          * @param {Boolean} appendArgs Whether to append additional arguments or override the original ones
          */
-        bindSystemMessage: function (event, fn, additionalArgs, appendArgs) {
+        bindSystemMessage: function (event, fn, single, additionalArgs, appendArgs) {
             var me = this,
                callable;
 
@@ -263,11 +279,13 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
 
             callable = me.bind(fn, additionalArgs, appendArgs);
 
-            me.boundMessages = me.boundMessages || {};
-            me.boundMessages[event] = me.boundMessages[event] || {};
-            me.boundMessages[event][fn] = callable;
+            if (!single) {
+                me._boundMessages = me._boundMessages || {};
+                me._boundMessages[event] = me._boundMessages[event] || {};
+                me._boundMessages[event][fn] = callable;
+            }
 
-            me.onSystemMessage(event, callable, me);
+            me.onSystemMessage(event, callable, me, single);
         },
 
         /**
@@ -281,32 +299,36 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (
                 callable;
 
             if (!event) {
-                for (var e in me.boundMessages) {
-                    me.unbindSystemMessage(e);
+                for (var e in me._boundMessages) {
+                    if (me._boundMessages.hasOwnProperty(e)) {
+                        me.unbindSystemMessage(e);
+                    }
                 }
                 return;
             }
 
             if (!fn) {
-                for (var c in me.boundMessages[event]) {
-                    me.unbindSystemMessage(event, c);
+                for (var f in me._boundMessages[event]) {
+                    if (me._boundMessages[event].hasOwnProperty(f)) {
+                        me.unbindSystemMessage(event, f);
+                    }
                 }
                 return;
             }
 
-            if (me.boundMessages[event] && me.boundMessages[event][fn]) {
-                callable = me.boundMessages[event][fn];
+            if (me._boundMessages[event] && me._boundMessages[event][fn]) {
+                callable = me._boundMessages[event][fn];
                 // unbind the function
                 me.unSystemMessage(event, callable, me);
                 // delete the reference to the function
-                delete me.boundMessages[event][fn];
+                delete me._boundMessages[event][fn];
                 // if this event has no more listeners, delete the event scope
-                if (!me.boundMessages[event].length) {
-                    delete me.boundMessages[event];
+                if (!me._boundMessages[event].length) {
+                    delete me._boundMessages[event];
                 }
             } else {
                 throw new Error(StringUtils.format(
-                    'Could not unbind function {0}.{1} from system message "{2}" ' +
+                    'Could not unbind function "{0}.{1}" from system message "{2}" ' +
                     'because this combination does not exist',
                     me.name,
                     fn,
