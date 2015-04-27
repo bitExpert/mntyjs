@@ -32,7 +32,8 @@ module.exports = function (grunt) {
                     include: [
                         'requireLib',
                         'Window',
-                        'Plugin'
+                        'Plugin',
+                        'when'
                     ]
                 }
             },
@@ -59,7 +60,8 @@ module.exports = function (grunt) {
                     include: [
                         'requireLib',
                         'Window',
-                        'Plugin'
+                        'Plugin',
+                        'when'
                     ]
                 }
             }
