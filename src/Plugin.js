@@ -104,9 +104,9 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
                 result = me.init(dfd);
             } catch (e) {
                 me.logger.error(StringUtils.format(
-                   'Error while initializing plugin "{0}": {1}',
-                   me.name,
-                   e.message
+                    'Error while initializing plugin "{0}": {1}',
+                    me.name,
+                    e.message
                 ));
             }
 
@@ -165,12 +165,19 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
          */
         unmount: function () {
             var me = this;
-            // clear local listeners
-            me.unbindSystemMessage();
-            me.detachSystemDelegates();
+            try {
+                me.unbindSystemMessage();
+                me.detachSystemDelegates();
+                me.destroy();
+            } catch (e) {
+                me.logger.error(StringUtils.format(
+                    'Error while unmounting plugin "{0}": {1}',
+                    me.name,
+                    e.message
+                ));
+            }
             me._boundFns = null;
             me._boundMessages = null;
-            me.destroy();
             me.$element = null;
             me.logger = null;
         },
@@ -268,12 +275,12 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
          */
         bindSystemMessage: function (event, fn, single, additionalArgs, appendArgs) {
             var me = this,
-               callable;
+                callable;
 
             if (!StringUtils.isString(fn)) {
                 throw new Error(StringUtils.format(
-                   'You only may bind functions of your plugin using a string for function definition. ' +
-                   'If you want to use another source, please use this.onSystemMessage(\'eventName\', this.bind(yourFn)) instead'
+                    'You only may bind functions of your plugin using a string for function definition. ' +
+                    'If you want to use another source, please use this.onSystemMessage(\'eventName\', this.bind(yourFn)) instead'
                 ));
             }
 

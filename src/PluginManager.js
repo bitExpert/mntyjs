@@ -242,7 +242,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             }
 
             logger.debug(StringUtils.format(
-                'Unmounting plugin {0} from element[{1}]...',
+                'Unmounting plugin "{0}" from element[{1}]...',
                 pluginName,
                 id
             ));
@@ -250,7 +250,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             instances[id][pluginName].unmount();
 
             logger.debug(StringUtils.format(
-                'Successfully unmounted plugin {0} from element[{1}].',
+                'Successfully unmounted plugin "{0}" from element[{1}].',
                 pluginName,
                 id
             ));
@@ -426,7 +426,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
                     if (!me.isPluginDisabled(pluginName)) {
                         logger.debug(StringUtils.format(
-                            'Mounting plugin {0} to element[{1}]...',
+                            'Mounting plugin "{0}" to element[{1}]...',
                             pluginName,
                             id
                         ));
