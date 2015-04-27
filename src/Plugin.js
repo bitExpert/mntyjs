@@ -1,4 +1,4 @@
-define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], function (Observable, Logging, StringUtils, FnUtils, $, when) {
+define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery'], function (Observable, Logging, StringUtils, FnUtils, $) {
     var createDelegate,
         Plugin;
 
@@ -97,7 +97,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
          */
         onSystemPrepared: function () {
             var me = this,
-                dfd = when.defer(),
+                dfd = $.Deferred(),
                 result;
 
             try {
@@ -114,7 +114,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
             if (!result) {
                 me.fire('initialized');
             } else {
-                when(result).done(function () {
+                $.when(result).done(function () {
                     me.fire('initialized');
                 });
             }
@@ -128,7 +128,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
          */
         onSystemReady: function () {
             var me = this,
-                dfd = when.defer(),
+                dfd = $.Deferred(),
                 result;
 
             try {
@@ -145,7 +145,7 @@ define(['Observable', 'Logging', 'StringUtils', 'FnUtils', 'jquery', 'when'], fu
             if (!result) {
                 me.fire('executed');
             } else {
-                when(result).done(function () {
+                $.when(result).done(function () {
                     me.fire('executed');
                 });
             }

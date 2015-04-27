@@ -28,7 +28,6 @@
   "devDependencies": {
     "jquery": "latest",
     "log4javascript": "https://github.com/avuori/log4javascript-amd.git",
-    "requirejs": "latest",
-    "when": "~3.7.2"
+    "requirejs": "latest"
   }
 }

@@ -23,17 +23,12 @@ module.exports = function (grunt) {
                         log4js: '../vendor/log4javascript/log4javascript_uncompressed',
                         BaseClass: '../lib/Base',
                         MutationObserver: '../lib/MutationObserver',
-                        WeakMap: '../lib/WeakMap',
-                        when: '../vendor/when/when'
+                        WeakMap: '../lib/WeakMap'
                     },
-                    packages: [
-                        { name: 'when', location: '../vendor/when/', main: 'when' }
-                    ],
                     include: [
                         'requireLib',
                         'Window',
-                        'Plugin',
-                        'when'
+                        'Plugin'
                     ]
                 }
             },
@@ -51,17 +46,12 @@ module.exports = function (grunt) {
                         log4js: '../vendor/log4javascript/log4javascript_uncompressed',
                         BaseClass: '../lib/Base',
                         MutationObserver: '../lib/MutationObserver',
-                        WeakMap: '../lib/WeakMap',
-                        when: '../vendor/when/when'
+                        WeakMap: '../lib/WeakMap'
                     },
-                    packages: [
-                        { name: 'when', location: '../vendor/when/', main: 'when' }
-                    ],
                     include: [
                         'requireLib',
                         'Window',
-                        'Plugin',
-                        'when'
+                        'Plugin'
                     ]
                 }
             }
