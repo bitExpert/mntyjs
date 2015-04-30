@@ -4,7 +4,7 @@
  * @private
  * @module PluginManager
  */
-define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'MutationObserver', 'FnUtils', 'when'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, MutationObserver, FnUtils, when) {
+define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquery', 'MutationObserver', 'FnUtils'], function (Observable, Plugin, OptionParser, StringUtils, Logging, $, MutationObserver, FnUtils) {
     var PluginManager,
         instances = {},
         mutationObserver,
@@ -362,10 +362,10 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
 
             //@TODO: Optimize to more functional style
             plugins.forEach(function (plugin) {
-                var dfd = when.defer(),
+                var dfd = $.Deferred(),
                     pluginPath = toPath(plugin);
 
-                dfds.push(dfd.promise);
+                dfds.push(dfd);
 
                 require([pluginPath], function (Plugin) {
                     fetchedPlugins[plugin] = Plugin;
@@ -385,7 +385,7 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             });
 
             // execute the callback as soon as all plugins have been loaded
-            when.all(dfds).then(function () {
+            $.when.apply($, dfds).then(function () {
                 cb(fetchedPlugins);
             });
         },
@@ -471,13 +471,13 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
             me.fire('prepared');
 
             // fire "ready" event, as soon as all plugins have been initialized
-            when.all(initialized).then(function () {
+            $.when.apply($, initialized).then(function () {
                 logger.debug('All plugins initialized. Waiting for all plugins to be executed...');
                 me.fire('ready');
             });
 
             // fire "pluginsexecuted" event, as soon as all plugins have finished their execution
-            when.all(executed).then(function () {
+            $.when.apply($, executed).then(function () {
                 logger.debug('All plugins executed.');
                 me.fire('pluginsexecuted');
             });
@@ -534,13 +534,13 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
          * @returns {Deferred} Deferred object which will be resolved when finished
          */
         waitOnceFor: function (instance, event) {
-            var dfd = when.defer();
+            var dfd = $.Deferred();
 
             instance.on(event, function () {
                 dfd.resolve();
             }, instance, true);
 
-            return dfd.promise;
+            return dfd;
         },
         /**
          * Returns if the plugin with the given name is disabled
