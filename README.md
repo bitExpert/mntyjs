@@ -1,5 +1,5 @@
 ![mntyjs Logo](./logo.png)
-# mntyjs
+# mntyjs [![Dependency Status](https://www.versioneye.com/javascript/bitexpert:mntyjs/1.1.4/badge.svg)](https://www.versioneye.com/javascript/bitexpert:mntyjs/1.1.4)
 
 mntyjs is a lightweight plugin system based on require.js, jQuery and Base.js
 which is designed for easy-to-use implementation purpose.
