@@ -2,17 +2,260 @@
 # mntyjs [![Dependency Status](https://www.versioneye.com/javascript/bitexpert:mntyjs/1.1.4/badge.svg)](https://www.versioneye.com/javascript/bitexpert:mntyjs/1.1.4)
 
 mntyjs is a lightweight plugin system based on require.js, jQuery and Base.js
-which is designed for easy-to-use implementation purpose.
+which is designed for easy-to-use implementation purpose in "oldschool" multipage HTML applications (CMSs, Webpages, etc.). It is **NOT** designed for single page applications implementation but could be used for it though.
+
+* Supports IE9+
+* Dynamic (un)mounting of plugins using MutationObserver-shim
+* Injectable configuration
+* Comfortable configuration chain
+* Modular structure (you may re-use single components in your plugins as well)
+* Loose coupling through global message bus
+* Lets you produce readable, maintainable, testable and reusable code easily
+* Full JSDoc module documentation
 
 ## Quick start
+Add the dependency to your bower.json:
+``` shell
+bower install mntyjs#1.1.4
+```
+
 
 Add the mntyjs to the head of the page:
-<script type="text/javascript" src="path/to/mnty.js"/></script>
-
+``` xml
+<script src="path/to/mnty.js" type="text/javascript"/></script>
+```
 
 mntyjs will automatically register to the document ready event and will immediately run as soon
 as the document is ready. Also it registers to the window unload event and will destroy itself and all used plugin
 instances.
 
+### Configuring mntyjs
+mntyjs uses kind of a simplified JSON representation for configuration:
 
-More docs soon...
+data-attrib="'key1':'value1','key2':3,'key3':true"
+ 
+To configure mntyjs itself you simply provide another data-attribute to the script tag you used for including it:
+
+``` xml
+<script data-mntyjs="'loggingEnabled':true" src="path/to/mnty.js" type="text/javascript"/></script>
+``` 
+ 
+Possible options for mntyjs itself are:
+
+| Option        | Type    | Default | Description                                                                                                   |
+|:--------------|:--------|:--------|:--------------------------------------------------------------------------------------------------------------|
+|loggingEnabled | Boolean | false   | Turn on/off the console logs                                                                                  | 
+|loadFrom       | String  | ''      | Relative path to your baseUrls to load the plugins from                                                       |
+|mountPoint     | String  | mount   | data-attribute to define your plugins to mount to the according DOM Element. Default results in "data-mount"  |
+|baseUrl        | String  | ''      | baseUrl to load your plugins from                                                                             |
+|idProperty     | String  | mid     | data attribute to assign to the mounted dom elements. Default results in "data-mid"                           |     
+|disabledPlugins| Array   | []      | Array of names of plugins to disable globally (good for debugging/emergency purpose)                          |
+
+
+### Mounting plugins
+
+Once mntyjs is setup, you may easily mount plugins to any of your DOM Elements.
+Let's say you configured mntyjs like this:
+
+``` xml
+<script data-mntyjs="'loggingEnabled':true, 'loadFrom':'plugin'" src="path/to/mnty.dev.js" type="text/javascript"/></script>
+``` 
+
+So loadFrom points at the plugin folder below your webroot. 
+
+For demonstration how registration and configuration works, we implement a plugin which alerts the text of an element (absolutely awesome, I know ;-)).
+
+First we need to create the file {webroot}/plugin/Alerter.js which is the plugin itself.
+
+The boilerplate template of a plugin looks like this:
+
+``` javascript
+define(['Plugin'], function (Plugin) {
+    var Boilerplate = Plugin.extend({
+       execute: function (dfd) {
+           // do awesome stuff
+       }
+    });
+
+    return Boilerplate;
+});
+```
+
+So, if we want to alert the text of the element our plugin will be mounted on, we have to implement the plugin as follows:
+
+``` javascript
+define(['Plugin', 'Window'], function (Plugin, Window) {
+    var Alerter = Plugin.extend({
+        execute: function (dfd) {
+           Window.alert(this.$element.text());
+        }
+    });
+
+    return Alerter;
+});
+```
+
+For mounting the plugin to an element, we add an element to the DOM:
+``` xml
+<div data-mount="Alerter">Some text, that will be shown by the plugin</div>
+``` 
+
+Just reload the page and you will see the element's text in an alert window.
+
+### Configuring plugins
+mntyjs comes with a built-in configuration mechanism, which automatically generates getters and setters for you as well as an apply and update chain which can be very useful in some cases.
+
+To demonstrate how configuration works in detail, we implement another plugin, which colorizes the text of the element it's mounted to.
+
+We create the plugin in {webroot}/plugin/Colorizer.js:
+
+``` javascript
+define(['Plugin'], function (Plugin) {
+    var Colorizer = Plugin.extend({
+        config: {
+           color: '#000'
+        },
+        updateColor: function (newColor, oldColor) {
+            if (newColor) {
+                this.$element.css('color', newColor');
+            }
+        }
+    });
+
+    return Colorizer;
+});
+```
+And now we register it to several elements with different configuration:
+
+``` xml
+<div data-mount="Alerter,Colorizer">Some text, that will be shown by the plugin</div>
+<div data-mount="Colorizer" data-colorizer="'color':'#f00'">Some text, that will be shown by the plugin</div>
+<div data-mount="Colorizer" data-colorizer="'color':'#0f0'">Some text, that will be shown by the plugin</div>
+<div data-mount="Colorizer" data-colorizer="'color':'#00f'">Some text, that will be shown by the plugin</div>
+<div data-mount="Colorizer" data-colorizer="'color':'#fff'">Some text, that will be shown by the plugin</div>
+``` 
+
+After reloading the page you should see the alert text and five texts with the configured colors.
+
+So what's happening here?
+
+We added an attribute called "config" to our plugin. mntyjs will apply the configuration mechanism for all the first level properties of the object for you automatically, which works as follows:
+
+#### Appliers
+If a setter is called the applier function is called first. An applier function is used for transformations on the config value before it is used further. For example you may provide a config object for a third party library (Masonry, Carousel, whatever) and create and return an instance of it for being able to deal with an instance when calling the getter or implementing an updater. 
+
+#### Updaters
+The applied value is linked to the plugin to be retrieved later via the generated getter. At the end, the updater is called with two params: The new value of the property and the old one and you may decide in this function what will happen, whenever the value of this property is changed using its setter.
+
+#### Configuration injection
+In the colorizer plugin we use the config attribute "color" with default value "#000". Plugins are able to be configured via data-attributes, which have to follow a simple naming convention: 
+
+``` xml
+data-[plugin name to lowercase, replace / through -]
+```
+
+The configuration itself is kind of 'pseudo'-JSON, because you don't need the outer curly brackets and you may use single instead of double quotes (this helps you to get rid of ugly escaping ;-))
+
+So in our case data-colorizer is the data attribute to configure the colorizer plugin. If the colorizer plugin was located at a subfolder ({webroot}/plugin/fancystuff/Colorizer.js) it would look like this:
+
+``` xml
+<div data-mount="fancystuff/Colorizer" data-fancystuff-colorizer="'color':'#f00'">Some text, that will be shown by the plugin</div>
+``` 
+
+### Global messages
+mntyjs also has a built in global messaging system which permits loose coupling between several plugins, which empowers you to separate responsibilities into different plugins (MVC for example). While one plugin fetches, prepares, modifies and pushes data, other plugins just listen to changes on the resulting model and update their elements according to it.
+
+#### Example
+The first plugin retrieves data from the backend and sends messages to the global message bus:
+
+``` javascript
+define(['Plugin', 'jquery'], function (Plugin, $) {
+    var DataController = Plugin.extend({
+        execute: function () {
+            var me = this;
+            
+            $.ajax({
+                type: 'GET',
+                url: '/data',
+                dataType: 'json',
+                success: FnUtils.bind(me.onSuccess, me),
+                error: FnUtils.bind(me.onFailure, me)
+            });
+        },
+        onSuccess: function (data, textStatus, jqXHR) {
+            this.sendSystemMessage('data-change', data);
+        },
+        onFailure: function (jqXHR, textStatus, errorThrown) {
+            this.sendSystemMessage('data-error', errorThrown);
+        }
+    });
+
+    return DataController;
+});
+```
+
+The other plugin(s) register listeners to the message bus and display the data in some way when messages are retrieved:
+
+``` javascript
+define(['Plugin', 'Window'], function (Plugin, Window) {
+    var JsonPlainView = Plugin.extend({
+        config: {
+            data: null
+        },
+        init: function () {
+            this.bindSystemMessage('data-change', 'setData');
+            this.bindSystemMessage('data-error', 'alertError');
+        },
+        updateData: function (newData, oldData) {
+            if (oldData) {
+                this.$element.empty();
+            }
+            
+            if (newData) {
+                this.$element.html('<pre>' + newData + '</pre>');
+            }
+        },
+        alertError: function (error) {
+            Window.alert(error.toString());
+        }
+    });
+
+    return JsonPlainView;
+});
+```
+
+All the listeners which have been registered using bindSystemMessage will be destroyed automatically when the plugin instance is destroyed (unmounted).
+
+### Dynamic (un)mounting
+mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and remove elements which use plugins as well. The MutationObserver will notify mntyjs which will initialize / destroy all the plugins of the according elements.
+
+### Best practices
+... to be documented ...
+
+### Building your project
+... to be documented ...
+
+### Testing your project
+... to be documented ...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
