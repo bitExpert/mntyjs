@@ -169,7 +169,7 @@ mntyjs also has a built in global messaging system which permits loose coupling 
 The first plugin retrieves data from the backend and sends messages to the global message bus:
 
 ``` javascript
-define(['Plugin', 'jquery'], function (Plugin, $) {
+define(['Plugin', 'jquery', 'FnUtils'], function (Plugin, $, FnUtils) {
     var DataController = Plugin.extend({
         execute: function () {
             var me = this;
