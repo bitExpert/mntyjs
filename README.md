@@ -37,7 +37,7 @@ data-attrib="'key1':'value1','key2':3,'key3':true"
 To configure mntyjs itself you simply provide another data-attribute to the script tag you used for including it:
 
 ``` xml
-<script data-mntyjs="'loggingEnabled':true" src="path/to/mnty.js" type="text/javascript"/></script>
+<script data-mntyjs="'loggingEnabled':true" src="path/to/mnty.js" type="text/javascript"></script>
 ``` 
  
 Possible options for mntyjs itself are:
@@ -117,7 +117,7 @@ define(['Plugin'], function (Plugin) {
         },
         updateColor: function (newColor, oldColor) {
             if (newColor) {
-                this.$element.css('color', newColor');
+                this.$element.css('color', newColor);
             }
         }
     });
