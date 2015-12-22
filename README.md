@@ -233,7 +233,68 @@ mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and re
 ... to be documented ...
 
 ### Building your project
-... to be documented ...
+mntyjs has its own grunt build task. In order to build your project you have to install grunt-mntyjs first:
+``` shell
+npm install --save-dev grunt-mntyjs
+```
+In order to load the grunt-mntyjs task, add the following line to your Gruntfile.js:
+``` javascript
+grunt.loadNpmTasks('grunt-mntyjs');
+```
+
+Now you have to configure your mntyjs build task in the Gruntfile.js of your project. An example configuration is listed here:
+``` javascript
+mntyjs: {
+    compile: {
+        options: {
+            baseUrl: '<%= config.app %>', // the base url
+            out: '<%= config.dist %>/scripts/app.js', // the output file
+            optimize: 'uglify2',
+            loadFrom: './scripts', // the plugin folder
+            deps: [
+                '../bower_components/mntyjs/dist/mnty.js'
+            ],
+            mainConfigFile: ''
+        },
+        files: {
+            src: [
+                  '<%= config.app %>/index.html'
+            ]
+        }
+    }
+}
+```
+Configuration options are:
+
+| Option        | Type    | Default | Description                                                                                                                                                 |
+|:--------------|:--------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|baseUrl        |String   |''       |Base url of your application, serves as entry point for the relative urls defined in the mntyjs task configuration                                           |
+|out            |String   |''       |the output file of the compile task of grunt-mntyjs (writes the compiled, minified js to this file)                                                          |
+|optimize       |String   |'uglify' |How to optimize the JS file in the output directory (see [example build js file in r.js](https://github.com/jrburke/r.js/blob/master/build/example.build.js))|
+|loadFrom       |String   |''       |the path from which your plugins should be loaded from                                                                                                       |
+|deps           |Array    |[]       |dependencies for the compilation task, the paths are defined relatively to your baseUrl                                                                      |
+|mainConfigFile |String   |''       |the path to your config file containing your r.js config                                                                                                     |
+|files.src      |Array    |[]       |the paths/files to be scanned for mntyjs plugins                                                                                                             |
+
+#### mntyjs in combination with grunt usemin task
+If you are using the usemin grunt task in your project to perform rewrites based on rev and the useminPrepare configuration, you can extend the existing usemin task by adding the following lines into the ```options``` section of your task definition:
+
+``` javascript
+blockReplacements: {
+    mntyjs: function (block) {
+        var loadFromPath = block.searchPath.join(',');
+        return '<script data-mntyjs="\'loadFrom\': \'' + loadFromPath + '\'" src="' + block.dest + '"></script>';
+    }
+}
+```
+
+Now you can control via usemin comment blocks in your *.html files where the output file of mntyjs processed by the rev and useminPrepare tasks will be referenced
+``` xml
+<!-- build:mntyjs(./scripts) scripts/app.js -->
+    <script data-mntyjs="'loggingEnabled': true, 'loadFrom': './scripts'" src="bower_components/mntyjs/dist/mnty.dev.js"></script>
+<!-- endbuild -->
+```
+The path given in braces is the path that will be set as path to load the mntyjs plugins from
 
 ### Testing your project
 ... to be documented ...
