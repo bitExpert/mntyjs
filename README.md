@@ -272,8 +272,12 @@ mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and re
 
 ## Building your project
 
+You should build your project for usage in production environments.
+Building means all js files will be packed together to one minified file.
+This reduces the page load time of your web page.
+
 ### Building your project with grunt
-The easiest way is to use the (grunt-mntyjs)[https://www.npmjs.com/package/grunt-mntyjs] package.
+The easiest way is to use the [grunt-mntyjs](https://www.npmjs.com/package/grunt-mntyjs) package.
 
  - install grunt-cli ```npm install -g grunt-cli```
  - install grunt-mntyjs ```npm install bitexpert/mntyjs --save-dev```
@@ -306,8 +310,8 @@ Create a basic grunt file
 Run ```grunt build``` to build the production file.
 The grunt task will find all used plugins (in the file urls) and it's dependencies.
 
-If paths cannot be resolved due the usage of a config file. It is possoböe to add
-the configuration directly to the options
+If paths cannot be resolved due the usage of a config file. It is possible to add
+the path and shim config directly to the options.
 
 ```js
     options: {
