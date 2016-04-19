@@ -16,7 +16,8 @@ which is designed for easy-to-use implementation purpose in "oldschool" multipag
 ## ToC
  1. [Quick start](#quick-start)
    1. [Configuration](#configuring-mntyjs)
-   1. [Mounting plugins](#mounting-plugins)
+   1. [Additional Configuration](#adding-additional-configuration)
+ 1. [Mounting plugins](#mounting-plugins)
    1. [Configuring plugins](#configure-plugins)
    1. [Global messages](#global-messages)
    1. [Dynamic (un)mounting](#dynamic-unmounting)
@@ -67,7 +68,7 @@ Possible options for mntyjs itself are:
 
 By the fact that mntyjs is based on requireJS. It is possible to add an additional config file.
 
-``` json
+``` js
 require.config({
     //adding timestamp as cache breaker
     urlArgs: 'bust=' + (new Date()).getTime(),
@@ -270,7 +271,55 @@ mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and re
 ... to be documented ...
 
 ## Building your project
-... to be documented ...
+
+### Building your project with grunt
+The easiest way is to use the (grunt-mntyjs)[https://www.npmjs.com/package/grunt-mntyjs] package.
+
+ - install grunt-cli ```npm install -g grunt-cli```
+ - install grunt-mntyjs ```npm install bitexpert/mntyjs --save-dev```
+ 
+Create a basic grunt file
+```js
+    module.exports = function (grunt) {
+        'use strict';
+        
+        grunt.loadNpmTasks('grunt-mntyjs');
+    
+        grunt.initConfig({
+            mntyjs: {
+                files: ['path/to/html/files/**/*.html'],
+                options: {
+                    baseUrl: './',
+                    deps: ['bower_components/mntyjs/dist/mnty.js'],
+                    loadFrom: 'relative/path/to/plugin/folder/',
+                    mountPoint: 'mount',
+                    out: 'path/to/production/file/main.js'
+                }
+            }
+        });
+        grunt.registerTask('build', [
+            'mntyjs'
+        ]);
+    };
+```
+
+Run ```grunt build``` to build the production file.
+The grunt task will find all used plugins (in the file urls) and it's dependencies.
+
+If paths cannot be resolved due the usage of a config file. It is possoböe to add
+the configuration directly to the options
+
+```js
+    options: {
+        paths: {
+            #the path has to be relative from the grunt file
+            'bar': 'bower_components/foo/bar'
+        }
+    }
+```
+
+
+
 
 ## Testing your project
 ... to be documented ...
