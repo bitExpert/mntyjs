@@ -13,6 +13,17 @@ which is designed for easy-to-use implementation purpose in "oldschool" multipag
 * Lets you produce readable, maintainable, testable and reusable code easily
 * Full JSDoc module documentation
 
+## ToC
+ 1. [Quick start](#quick-start)
+   1. [Configuration](#configuring-mntyjs)
+   1. [Mounting plugins](#mounting-plugins)
+   1. [Configuring plugins](#configure-plugins)
+   1. [Global messages](#global-messages)
+   1. [Dynamic (un)mounting](#dynamic-unmounting)
+ 1. [Best practices](#best-practices)
+ 1. [Building your project](#building-your-project)
+ 1. [Testing your project](#testing-your-project)
+
 ## Quick start
 Add the dependency to your bower.json:
 ``` shell
@@ -52,7 +63,33 @@ Possible options for mntyjs itself are:
 |disabledPlugins| Array   | []      | Array of names of plugins to disable globally (good for debugging/emergency purpose)                          |
 
 
-### Mounting plugins
+### Adding additional configuration
+
+By the fact that mntyjs is based on requireJS. It is possible to add an additional config file.
+
+``` json
+require.config({
+    //adding timestamp as cache breaker
+    urlArgs: 'bust=' + (new Date()).getTime(),
+    paths: {
+        //...
+    },
+    shim: {
+        //...
+    }
+});
+```
+
+Don't forget to reference your config.js file:
+``` html
+<script src="path/to/mnty.js"></script>
+<script src="path/to/config.js"></script>
+```
+
+Have a look at the [requireJS page] (http://requirejs.org/docs/api.html#config) for further information.
+
+
+## Mounting plugins
 
 Once mntyjs is setup, you may easily mount plugins to any of your DOM Elements.
 Let's say you configured mntyjs like this:
@@ -229,13 +266,13 @@ All the listeners which have been registered using bindSystemMessage will be des
 ### Dynamic (un)mounting
 mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and remove elements which use plugins as well. The MutationObserver will notify mntyjs which will initialize / destroy all the plugins of the according elements.
 
-### Best practices
+## Best practices
 ... to be documented ...
 
-### Building your project
+## Building your project
 ... to be documented ...
 
-### Testing your project
+## Testing your project
 ... to be documented ...
 
 
