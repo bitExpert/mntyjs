@@ -280,12 +280,14 @@ Avoid dom manipulations which are not in the scope of your plugin.
  //!wrong - $() can change the complete dom
  $('.my-class').html('changed content')
  
- 
- //correct - this.$child and this.$element can never leave you scope
+ //correct - this.$child and this.$element can never leave your scope
  this.$child('.my-class').html('changed content') 
  this.$element.html('changed content')
-});
 ```
+
+If you need to change something outside of your scope you may do the following:
+ - change to scope of you plugin
+ - use another plugin to change the page part. And communicate with the global message bus.
 
 
 
