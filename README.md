@@ -268,7 +268,26 @@ All the listeners which have been registered using bindSystemMessage will be des
 mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and remove elements which use plugins as well. The MutationObserver will notify mntyjs which will initialize / destroy all the plugins of the according elements.
 
 ## Best practices
+
 ... to be documented ...
+
+### Stay in your scope
+
+The scope of each plugin is a big advantage during development.
+Avoid dom manipulations which are not in the scope of your plugin.
+
+``` javascript
+ //!wrong - $() can change the complete dom
+ $('.my-class').html('changed content')
+ 
+ 
+ //correct - this.$child and this.$element can never leave you scope
+ this.$child('.my-class').html('changed content') 
+ this.$element.html('changed content')
+});
+```
+
+
 
 ## Building your project
 
