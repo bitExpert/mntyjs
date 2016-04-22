@@ -20,6 +20,7 @@ which is designed for easy-to-use implementation purpose in "oldschool" multipag
  1. [Mounting plugins](#mounting-plugins)
    1. [Configuring plugins](#configure-plugins)
    1. [Global messages](#global-messages)
+   1. [Extending a Plugin (inheritance)](#extending-a-plugin-inheritance)
    1. [Dynamic (un)mounting](#dynamic-unmounting)
  1. [Best practices](#best-practices)
  1. [Building your project](#building-your-project)
@@ -266,8 +267,8 @@ All the listeners which have been registered using bindSystemMessage will be des
 
 ### Extending a Plugin (inheritance)
 
-Extending a plugin is still simple. Every plugin in the examples extends the base plugin "Plugin".
-Using an Alerter Plugin again as example:
+Extending a plugin is still simple. Every plugin in the example extends the base plugin "Plugin".
+To extend our own plugin we use an Alerter again as example:
 
 ``` javascript
 define(['Plugin', 'Window'], function (Plugin, Window) {
@@ -285,7 +286,7 @@ define(['Plugin', 'Window'], function (Plugin, Window) {
 });
 ```
 
-Now we implement a SpecialAlerter Plugin:
+Now we implement a SpecialAlerter:
 
 ``` javascript
 define(['plugins/Alerter'], function (Alerter) {
