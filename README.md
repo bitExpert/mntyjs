@@ -264,6 +264,45 @@ define(['Plugin', 'Window'], function (Plugin, Window) {
 
 All the listeners which have been registered using bindSystemMessage will be destroyed automatically when the plugin instance is destroyed (unmounted).
 
+### Extending a Plugin (inheritance)
+
+Extending a plugin is still simple. Every plugin in the examples extends the base plugin "Plugin".
+Using an Alerter Plugin again as example:
+
+``` javascript
+define(['Plugin', 'Window'], function (Plugin, Window) {
+    var Alerter = Plugin.extend({
+        execute: function () {
+            var me = this;
+            me.showMsg(me.$element.text());
+        },
+        showMsg: function (msg) {
+            var me = this;
+            Window.alert(msg);
+        }
+    });
+    return Alerter;
+});
+```
+
+Now we implement a SpecialAlerter Plugin:
+
+``` javascript
+define(['plugins/Alerter'], function (Alerter) {
+    var SpecialAlerter = Alerter.extend({
+        showMsg: function (msg) {
+            var me = this;
+            //calling base method
+            me.base('Special:' + msg);
+        }
+    });
+    return SpecialAlerter;
+});
+```
+We overwrite the showMsg function to prepend th 'Special' string to the message.
+After that we calling the function from the base class.
+
+
 ### Dynamic (un)mounting
 mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and remove elements which use plugins as well. The MutationObserver will notify mntyjs which will initialize / destroy all the plugins of the according elements.
 
