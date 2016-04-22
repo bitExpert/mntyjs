@@ -20,6 +20,7 @@ which is designed for easy-to-use implementation purpose in "oldschool" multipag
  1. [Mounting plugins](#mounting-plugins)
    1. [Configuring plugins](#configure-plugins)
    1. [Global messages](#global-messages)
+   1. [Extending a Plugin (inheritance)](#extending-a-plugin-inheritance)
    1. [Dynamic (un)mounting](#dynamic-unmounting)
  1. [Best practices](#best-practices)
  1. [Building your project](#building-your-project)
@@ -263,6 +264,45 @@ define(['Plugin', 'Window'], function (Plugin, Window) {
 ```
 
 All the listeners which have been registered using bindSystemMessage will be destroyed automatically when the plugin instance is destroyed (unmounted).
+
+### Extending a Plugin (inheritance)
+
+Extending a plugin is still simple. Every plugin in the example extends the base plugin "Plugin".
+To extend our own plugin we use an Alerter again as example:
+
+``` javascript
+define(['Plugin', 'Window'], function (Plugin, Window) {
+    var Alerter = Plugin.extend({
+        execute: function () {
+            var me = this;
+            me.showMsg(me.$element.text());
+        },
+        showMsg: function (msg) {
+            var me = this;
+            Window.alert(msg);
+        }
+    });
+    return Alerter;
+});
+```
+
+Now we implement a SpecialAlerter:
+
+``` javascript
+define(['plugins/Alerter'], function (Alerter) {
+    var SpecialAlerter = Alerter.extend({
+        showMsg: function (msg) {
+            var me = this;
+            //calling base method
+            me.base('Special:' + msg);
+        }
+    });
+    return SpecialAlerter;
+});
+```
+We overwrite the showMsg function to prepend th 'Special' string to the message.
+After that we calling the function from the base class.
+
 
 ### Dynamic (un)mounting
 mntyjs uses a Mutation-Observer Shim, which allows you to dynamically add and remove elements which use plugins as well. The MutationObserver will notify mntyjs which will initialize / destroy all the plugins of the according elements.
