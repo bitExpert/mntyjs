@@ -338,7 +338,7 @@ Building means all js files will be packed together to one minified file.
 This reduces the page load time of your web page.
 
 ### Building your project with grunt
-The easiest way is to use the [grunt-mntyjs](https://www.npmjs.com/package/grunt-mntyjs) package.
+The easiest way is to use the [grunt-mntyjs](https://github.com/bitExpert/grunt-mntyjs) [package](https://www.npmjs.com/package/grunt-mntyjs).
 
  - install grunt-cli ```npm install -g grunt-cli```
  - install grunt-mntyjs ```npm install bitexpert/mntyjs --save-dev```
