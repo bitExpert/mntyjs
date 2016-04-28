@@ -13,7 +13,7 @@ module.exports = function (grunt) {
             mnty: {
                 options: {
                     baseUrl: 'src',
-                    name: 'AutoLoader',
+                    name: 'AutoLoader',git
                     out: 'dist/mnty.js',
                     optimize: 'uglify2',
                     preserveLicenseComments: true,
