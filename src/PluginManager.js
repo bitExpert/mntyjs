@@ -557,5 +557,5 @@ define(['Observable', 'Plugin', 'OptionParser', 'StringUtils', 'Logging', 'jquer
         }
     });
 
-    return new PluginManager();
+    return PluginManager;
 });
