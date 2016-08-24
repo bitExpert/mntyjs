@@ -186,6 +186,51 @@ If a setter is called the applier function is called first. An applier function 
 #### Updaters
 The applied value is linked to the plugin to be retrieved later via the generated getter. At the end, the updater is called with two params: The new value of the property and the old one and you may decide in this function what will happen, whenever the value of this property is changed using its setter.
 
+#### execute
+The ```execute``` function will be called after the plugin has ready and config has been applied.
+
+#### onFinished
+The ```onFinished``` function will be called after **all** plugins has been executed.
+
+#### execution chain (example)
+```xml
+define(['Plugin'], function (Plugin) {
+    return Plugin.extend({
+        name: 'Logger',
+        config: {
+            prefix: ''
+        },
+        execute: function () {
+            this.log('executed');
+        },
+        init: function () {
+            this.log('init');
+        },
+        onFinished: function () {
+            this.log('onFinished');
+        },
+        updatePrefix: function (newValue) {
+            this.log('updatePrefix', newValue);
+        },
+        log: function (msg) {
+            console.log(this.getPrefix() + ' ' + msg);
+        }
+    });
+});
+```
+``` xml
+<div data-mount="Logger" data-logger="'prefix':'>'"></div>
+``` 
+This example will log the following order:
+```
+> updatePrefix
+> init
+> executed
+> onFinished
+``` 
+
+
+
 #### Configuration injection
 In the colorizer plugin we use the config attribute "color" with default value "#000". Plugins are able to be configured via data-attributes, which have to follow a simple naming convention: 
 
@@ -264,6 +309,9 @@ define(['Plugin', 'Window'], function (Plugin, Window) {
 ```
 
 All the listeners which have been registered using bindSystemMessage will be destroyed automatically when the plugin instance is destroyed (unmounted).
+
+
+
 
 ### Extending a Plugin (inheritance)
 
