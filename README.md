@@ -193,7 +193,7 @@ The ```execute``` function will be called after the plugin has ready and config 
 The ```onFinished``` function will be called after **all** plugins has been executed.
 
 #### execution chain (example)
-```xml
+```javascript
 define(['Plugin'], function (Plugin) {
     return Plugin.extend({
         name: 'Logger',
@@ -209,6 +209,10 @@ define(['Plugin'], function (Plugin) {
         onFinished: function () {
             this.log('onFinished');
         },
+        applyPrefix: function (value) {
+            this.log('applyPrefix ' + value);
+            return value;
+        },
         updatePrefix: function (newValue) {
             this.log('updatePrefix', newValue);
         },
@@ -218,11 +222,12 @@ define(['Plugin'], function (Plugin) {
     });
 });
 ```
-``` xml
+```xml
 <div data-mount="Logger" data-logger="'prefix':'>'"></div>
 ``` 
 This example will log the following order:
 ```
+applyPrefix >
 > updatePrefix
 > init
 > executed
