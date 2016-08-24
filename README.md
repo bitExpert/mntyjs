@@ -18,7 +18,7 @@ which is designed for easy-to-use implementation purpose in "oldschool" multipag
    1. [Configuration](#configuring-mntyjs)
    1. [Additional Configuration](#adding-additional-configuration)
  1. [Mounting plugins](#mounting-plugins)
-   1. [Configuring plugins](#configure-plugins)
+   1. [Configuring plugins](#configuring-plugins)
    1. [Global messages](#global-messages)
    1. [Extending a Plugin (inheritance)](#extending-a-plugin-inheritance)
    1. [Dynamic (un)mounting](#dynamic-unmounting)
